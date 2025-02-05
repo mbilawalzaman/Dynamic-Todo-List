@@ -20,7 +20,7 @@ This is a simple yet modern Todo List app built using HTML, CSS, JavaScript, and
 
 **Demo**
 A live demo of the app can be viewed here:
-[Your live demo link if available]
+[https://my-todo-portal.netlify.app/]
 
 **Installation**
 Clone the repository:
