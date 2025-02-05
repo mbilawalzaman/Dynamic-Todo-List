@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    
+    <!-- Include DataTable CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    
+     <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    
+    <!-- Include jQuery (required by DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Include DataTable JS -->
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Overall page layout */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-top: 40px;
+        }
+
+        /* Table Styling */
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        /* Add New Todo Button */
+        button {
+            padding: 12px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-left: 30px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            width: 40%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 36px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+
+        /* Form Styling */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="text"], select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        /* Hover effect for table rows */
+        tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 80%;
+            }
+
+            table {
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+                padding: 10px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Todo List</h1>
+
+    <button onClick="openModal()">Add New</button>
+
+    <table id="dataTable" class="display" border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Title</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+            <!-- Data will be inserted here -->
+        </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onClick="closeModal()">&times;</span>
+            <h2>Add New Todo</h2>
+            <form id="todoForm">
+                <label for="title">Title:</label><br>
+                <input type="text" id="title" name="title" required><br><br>
+                <label for="status">Status:</label><br>
+                <select id="status" name="status" required>
+                    <option value="Completed">Completed</option>
+                    <option value="Not Completed">Not Completed</option>
+                </select><br><br>
+                <button type="submit">Add Todo</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentId = 1;
+        let currentUserId = 1;
+
+        function openModal() {
+            document.getElementById("myModal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none";
+        }
+
+        document.getElementById("todoForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const title = document.getElementById("title").value;
+            const status = document.getElementById("status").value;
+
+            const tableBody = document.getElementById("data-table");
+            const newRow = document.createElement("tr");
+
+            const newIdCell = document.createElement("td");
+            newIdCell.textContent = currentId++;
+            newRow.appendChild(newIdCell);
+
+            const newUserIdCell = document.createElement("td");
+            newUserIdCell.textContent = currentUserId++;
+            newRow.appendChild(newUserIdCell);
+
+            const newTitleCell = document.createElement("td");
+            newTitleCell.textContent = title;
+            newRow.appendChild(newTitleCell);
+
+            const newStatusCell = document.createElement("td");
+            newStatusCell.textContent = status;
+            newRow.appendChild(newStatusCell);
+
+            tableBody.appendChild(newRow);
+
+            const table = $('#dataTable').DataTable();
+            table.row.add($(newRow)).draw();
+
+            closeModal();
+
+            document.getElementById("todoForm").reset();
+        });
+
+        function makeHttpRequest(url, callback) {
+            axios.get(url)
+                .then(response => {
+                    callback(null, response.data);
+                })
+                .catch(error => {
+                    console.log('Error details:', error.response || error);
+                    callback(error, null);
+                });
+        }
+
+        function handleResponse(error, data) {
+            if (error) {
+                console.log('Error:', error);
+            } else {
+                const tableBody = document.getElementById("data-table");
+
+                let maxId = 0;
+                let maxUserId = 0;
+
+                if (data && Array.isArray(data)) {
+                    data.forEach(item => {
+                        const row = document.createElement("tr");
+
+                        const idCell = document.createElement("td");
+                        idCell.textContent = item.id || "No Id";
+                        row.appendChild(idCell);
+
+                        const userIdCell = document.createElement("td");
+                        userIdCell.textContent = item.userId || "No UserId";
+                        row.appendChild(userIdCell);
+
+                        const titleCell = document.createElement("td");
+                        titleCell.textContent = item.title || "No Title";
+                        row.appendChild(titleCell);
+
+                        const completedCell = document.createElement("td");
+                        completedCell.textContent = item.completed ? "Completed" : "Not Completed";
+                        row.appendChild(completedCell);
+
+                        tableBody.appendChild(row);
+
+                        maxId = Math.max(maxId, item.id);
+                        maxUserId = Math.max(maxUserId, item.userId);
+                    });
+
+                    currentId = maxId + 1;
+                    currentUserId = maxUserId + 1;
+                }
+
+                $('#dataTable').DataTable();
+            }
+        }
+
+        makeHttpRequest('https://dummy-json.mock.beeceptor.com/todos', handleResponse);
+    </script>
+</body>
+</html>
+
